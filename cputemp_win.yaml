@@ -1,0 +1,62 @@
+zabbix_export:
+  version: '5.4'
+  date: '2021-09-22T10:19:18Z'
+  groups:
+    -
+      uuid: e960332b3f6c46a1956486d4f3f99fce
+      name: 'Templates/Server hardware'
+  templates:
+    -
+      uuid: 6113273208bb4922afba997ebeff9322
+      template: cputemp_win
+      name: cputemp_win
+      groups:
+        -
+          name: 'Templates/Server hardware'
+      discovery_rules:
+        -
+          uuid: e2513787867d42e4a284e388f6f297c8
+          name: 'cputemp Disc'
+          key: cputemp
+          delay: 60m
+          lifetime: 1d
+          item_prototypes:
+            -
+              uuid: 58c2c81a3f0f4100a324372123699db8
+              name: '{#CPUNAME} temp'
+              key: 'cputemp[CPU,{#CPUID}]'
+              delay: 5m
+              history: 15d
+              trends: '0'
+              preprocessing:
+                -
+                  type: JSONPATH
+                  parameters:
+                    - $..Value
+                -
+                  type: REGEX
+                  parameters:
+                    - '([0-9]+)'
+                    - \1
+              trigger_prototypes:
+                -
+                  uuid: 53c813cdb8e14f1e941b89174ba5e5a6
+                  expression: 'last(/cputemp_win/cputemp[CPU,{#CPUID}],#1:now-10m)>80'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/cputemp_win/cputemp[CPU,{#CPUID}],#1:now-10m)<80'
+                  name: '{#CPUNAME} temp High'
+                  priority: HIGH
+                -
+                  uuid: 24b92b72350c443bbb4d37b355481fb1
+                  expression: 'last(/cputemp_win/cputemp[CPU,{#CPUID}],#1:now-10m)>75'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/cputemp_win/cputemp[CPU,{#CPUID}],#1:now-10m)<75'
+                  name: '{#CPUNAME} temp Warn'
+                  priority: WARNING
+          lld_macro_paths:
+            -
+              lld_macro: '{#CPUID}'
+              path: $.Identifier
+            -
+              lld_macro: '{#CPUNAME}'
+              path: $.Name
